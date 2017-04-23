@@ -4,45 +4,61 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import glob
 import os
+import camera_calibration
+import color_gradient_threshold
+import perspective_transform
 
-def calibrate_camera(images):
-	""" Reads in images for a given imagepath array and finds chessboard corners
-	    for each image. Save the found corners in an array and the real world
-		object points in another. After all images are processed, it returns the
-		camera matrix and distortion coefficients of cv2.calibrateCamera as they
-		are needed for the camera calibration.
+def pipeline(images):
+	""" Pipeline for finding lane lines. It needs a array of the images to proceed.
+	The pipeline consists of 5 Steps:
+		1) Camera Calibration (done once)
+		2) Distortion correction (done for each image)
+		3) Color & Gradient Threshold (done for each image)
+		4) Perspective Transform (done for each image)
+		5) Peaks in Histogram (done for each image)
 	"""
-	### Arrays to store object points and image points from all the images
-	objpoints = [] # 3D points in real world space
-	imgpoints = [] # 2D points in image plane
-	### Preprare object points, like (0,0,0), (1,0,0), ...
-	objp = np.zeros((6*9,3), np.float32)
-	objp[:,:2] = np.mgrid[0:9,0:6].T.reshape(-1,2) # x, y coordinates
-
-	### Read in each image and process is if possible
+	### Step 1
+	mtx, dist = camera_calibration.get_camera_calibration_values()
 	for fname in images:
 		img = mpimg.imread(fname)
-		gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-		ret, corners = cv2.findChessboardCorners(gray, (9,6), None)
-		### If corners are found, add object points, image points
-		if ret == True:
-			imgpoints.append(corners)
-			objpoints.append(objp)
-	ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
-	return mtx, dist
+		print("shape:")
+		print(img.shape)
 
-def save_example_camera_calibration_images(images, mtx, dist):
-	""" Undistort and save all images given in the images path array images
-		to the folder 'camera_cal_undist'
-	"""
-	for fname in images:
-		img = mpimg.imread(fname)
+		### Step 2
 		dst = cv2.undistort(img, mtx, dist, None, None)
-		plt.imsave('./camera_cal_undist/'+fname.split('/')[-1], dst)
+		print("shape:")
+		print(dst.shape)
 
-### Read in calibration images
-images = glob.glob('./camera_cal/calibration*.jpg')
-mtx, dist = calibrate_camera(images)
+		### Step 3
+		combined = color_gradient_threshold.apply_thresholds(dst)
+		print("shape:")
+		print(combined.shape)
 
-### Uncomment if you want to save images for writeup report
-#save_example_camera_calibration_images(images, mtx, dist)
+		### Step 4
+		mask = perspective_transform.apply_standard_mask_to_image(combined)
+		print("shape:")
+		print(mask.shape)
+		warped = perspective_transform.warp(mask)
+		print("shape:")
+		print(warped.shape)
+
+		print("")
+		print("")
+
+		f, ((ax11, ax12, ax13, ax14),(ax21, ax22, ax23, ax24)) = plt.subplots(2, 4, figsize=(24, 9))
+		f.tight_layout()
+		ax11.imshow(img)
+		ax11.set_title('Original Image', fontsize=50)
+		ax12.imshow(dst)
+		ax12.set_title('Undistorted Image', fontsize=50)
+		ax13.imshow(combined, cmap='gray')
+		ax13.set_title('Combination', fontsize=50)
+		ax14.imshow(mask, cmap='gray')
+		ax14.set_title('masked image', fontsize=50)
+		ax21.imshow(warped, cmap='gray')
+		ax21.set_title('warped image', fontsize=50)
+		plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)
+		plt.savefig('./lane_lines_images/'+fname.split('/')[-1], dpi=100)
+
+test_images = glob.glob('./test_images/straight_lines*.jpg')
+pipeline(test_images)
