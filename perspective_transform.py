@@ -16,7 +16,7 @@ def __standard_vertices_array(image, dtype=np.int32):
 	bottom_right = [imshape[1]-bottom_width_offset, imshape[0]]
 	apex_left = [apex_width_offset, apex_height]
 	apex_right = [imshape[1]-apex_width_offset, apex_height]
-	return np.array([bottom_left, bottom_right, apex_right, apex_left], dtype=dtype)
+	return np.array([bottom_left, apex_left, bottom_right, apex_right], dtype=dtype)
 
 def __region_of_interest(img, vertices):
     """
@@ -50,19 +50,16 @@ def apply_standard_mask_to_image(image):
 	return __region_of_interest(image, vertices)
 
 def warp(image):
-	img_size = image.shape
-	print(img_size)
+	img_size = (image.shape[1], image.shape[0])
 	src = __standard_vertices_array(image, np.float32)
-	print(src)
-	rightside_offset = np.float32(img_size[1]-bottom_width_offset)
 
-	bottom_left = [np.float32(bottom_width_offset), np.float32(img_size[0])]
-	bottom_right = [rightside_offset, np.float32(img_size[0])]
-	apex_left = [np.float32(bottom_width_offset), np.float32(apex_height)]
-	apex_right = [rightside_offset, np.float32(apex_height)]
+	offset = 100
+	bottom_left = [np.float32(offset), np.float32(image.shape[0])]
+	bottom_right = [np.float32(image.shape[1]-offset), np.float32(image.shape[0])]
+	apex_left = [np.float32(offset), np.float32(0)]
+	apex_right = [np.float32(image.shape[1]-offset), np.float32(0)]
 
-	dst = np.array([bottom_left, bottom_right, apex_left, apex_right])
-	print(dst)
+	dst = np.array([bottom_left, apex_left, bottom_right, apex_right])
 
 	# Compute the perspective transform, M
 	M = cv2.getPerspectiveTransform(src, dst)
