@@ -33,8 +33,6 @@ def pipeline(images):
 		mask = perspective_transform.apply_standard_mask_to_image(combined)
 		warped = perspective_transform.warp(mask)
 		ploty, left_fitx, right_fitx, histogram_image = histogram.histogram(warped)
-		
-		#TODO: Histogram
 
 		f, ((ax11, ax12, ax13, ax14),(ax21, ax22, ax23, ax24)) = plt.subplots(2, 4, figsize=(24, 9))
 		f.tight_layout()
@@ -55,5 +53,5 @@ def pipeline(images):
 		plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)
 		plt.savefig('./lane_lines_images/'+fname.split('/')[-1], dpi=100)
 
-test_images = glob.glob('./test_images/straight_lines*.jpg')
+test_images = glob.glob('./test_images/test*.jpg')
 pipeline(test_images)

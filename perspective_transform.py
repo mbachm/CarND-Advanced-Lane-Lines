@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 import matplotlib.image as mpimg
 
-bottom_width_offset = 180
+bottom_width_offset = 100
 apex_height = 480
 
 def __standard_vertices_array(image, dtype=np.int32):
@@ -16,7 +16,7 @@ def __standard_vertices_array(image, dtype=np.int32):
 	bottom_right = [imshape[1]-bottom_width_offset, imshape[0]]
 	apex_left = [apex_width_offset, apex_height]
 	apex_right = [imshape[1]-apex_width_offset, apex_height]
-	return np.array([bottom_left, apex_left, bottom_right, apex_right], dtype=dtype)
+	return np.array([bottom_left, bottom_right, apex_right, apex_left], dtype=dtype)
 
 def __region_of_interest(img, vertices):
     """
@@ -39,6 +39,7 @@ def __region_of_interest(img, vertices):
     cv2.fillPoly(mask, vertices, ignore_mask_color)
     #returning the image only where mask pixels are nonzero
     masked_image = cv2.bitwise_and(img, mask)
+    #cv2.polylines(masked_image, vertices, True, color='white')
     return masked_image
 
 def apply_standard_mask_to_image(image):
@@ -59,7 +60,7 @@ def warp(image):
 	apex_left = [np.float32(offset), np.float32(0)]
 	apex_right = [np.float32(image.shape[1]-offset), np.float32(0)]
 
-	dst = np.array([bottom_left, apex_left, bottom_right, apex_right])
+	dst = np.array([bottom_left, bottom_right, apex_right, apex_left])
 
 	# Compute the perspective transform, M
 	M = cv2.getPerspectiveTransform(src, dst)
