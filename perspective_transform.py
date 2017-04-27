@@ -50,7 +50,10 @@ def apply_standard_mask_to_image(image):
 	vertices = [__standard_vertices_array(image)]
 	return __region_of_interest(image, vertices)
 
-def warp(image):
+def warp(image, toBirdView=True):
+	""" Performs an image transformation and returns the warped image and the inverse
+		perspective transformation matrix.
+	"""
 	img_size = (image.shape[1], image.shape[0])
 	src = __standard_vertices_array(image, np.float32)
 
@@ -63,9 +66,17 @@ def warp(image):
 	dst = np.array([bottom_left, bottom_right, apex_right, apex_left])
 
 	# Compute the perspective transform, M
-	M = cv2.getPerspectiveTransform(src, dst)
+	if toBirdView:
+		M = cv2.getPerspectiveTransform(src, dst)
+	# Compute inverse perspective transform, Minv
+	else:
+		M = cv2.getPerspectiveTransform(dst, src)
 
 	# Create warped image - uses linear interpolation
 	warped = cv2.warpPerspective(image, M, img_size, flags=cv2.INTER_LINEAR)
 	return warped
 
+def weighted_img(undst, rewarped, α=0.8, β=1., λ=0.):
+	""" Calculates the weighted sum of two arrays / images.
+	"""
+	return cv2.addWeighted(undst, α, rewarped, β, λ)

@@ -32,7 +32,21 @@ def pipeline(images):
 		### Step 4
 		mask = perspective_transform.apply_standard_mask_to_image(combined)
 		warped = perspective_transform.warp(mask)
-		ploty, left_fitx, right_fitx, histogram_image = histogram.histogram(warped)
+		ploty, left_fitx, right_fitx, left_fit, right_fit, left_curverad, right_curverad, histogram_image = histogram.histogram(warped)
+		filled_image = histogram.fillPolySpace(histogram_image, left_fitx, right_fitx, ploty)
+		#rewarp image
+		rewarped = perspective_transform.warp(histogram_image, toBirdView=False)
+
+		#stack images
+		result = perspective_transform.weighted_img(dst, rewarped, α=0.8, β=1, λ=0)
+
+		# add text
+		font = cv2.FONT_HERSHEY_SIMPLEX
+		curvature = 0.5*(round(left_curverad/1000,1) + round(right_curverad/1000,1))
+		curvature_text = str('radius of curvature: '+str(curvature)+'km')
+		cv2.putText(result, curvature_text, (430,630), font, 1, (0,0,255), 2, cv2.LINE_AA)
+		# add text for distance from center
+    	# 
 
 		f, ((ax11, ax12, ax13, ax14),(ax21, ax22, ax23, ax24)) = plt.subplots(2, 4, figsize=(24, 9))
 		f.tight_layout()
@@ -50,6 +64,10 @@ def pipeline(images):
 		ax22.plot(left_fitx, ploty, color='yellow')
 		ax22.plot(right_fitx, ploty, color='yellow')
 		ax22.set_title('histogram image', fontsize=50)
+		ax23.imshow(rewarped)
+		ax23.set_title('rewarped image', fontsize=50)
+		ax24.imshow(result)
+		ax24.set_title('final image', fontsize=50)
 		plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)
 		plt.savefig('./lane_lines_images/'+fname.split('/')[-1], dpi=100)
 
