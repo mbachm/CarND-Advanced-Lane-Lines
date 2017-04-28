@@ -73,8 +73,8 @@ def apply_thresholds(image):
         for an given image and combines the results in a binary image, which is 
         returned. 
     """
-    ksize = 15
     gradx = __abs_sobel_thresh(image, orient='x', thresh=(20, 100))
+    #ksize = 15
     #grady = __abs_sobel_thresh(image, orient='y', thresh=(20, 100))
     #mag_binary = __mag_thresh(image, sobel_kernel=ksize, mag_thresh=(30, 100))
     #dir_binary = __dir_threshold(image, sobel_kernel=ksize, thresh=(0.7, 1.3))

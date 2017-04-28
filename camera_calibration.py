@@ -5,7 +5,7 @@ import matplotlib.image as mpimg
 import glob
 import os
 
-def __calibrate_camera(images):
+def __calibrate_camera(images, testMode=False):
 	""" Reads in images for a given imagepath array and finds chessboard corners
 	    for each image. Save the found corners in an array and the real world
 		object points in another. After all images are processed, it returns the
@@ -28,17 +28,18 @@ def __calibrate_camera(images):
 		if ret == True:
 			imgpoints.append(corners)
 			objpoints.append(objp)
+	
 	ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
 	return mtx, dist
 
 def __save_undistorted_example_camera_calibration_images(images, mtx, dist):
 	""" Undistort and save all images given in the images path array images
-		to the folder 'camera_cal_undist'
+		to the folder 'output_images'
 	"""
 	for fname in images:
 		img = mpimg.imread(fname)
 		dst = cv2.undistort(img, mtx, dist, None, None)
-		plt.imsave('./camera_cal_undist/'+fname.split('/')[-1], dst)
+		plt.imsave('./output_images/'+fname.split('/')[-1], dst)
 
 def get_camera_calibration_values():
 	""" Returns the camera matrix and distortion coefficients calculated of all
@@ -55,6 +56,6 @@ def get_camera_calibration_values_and_save_example_camera_calibration_images():
 		the undistorted calibration images in the folder './camera_cal_undist/'
 	"""
 	calibration_images = glob.glob('./camera_cal/calibration*.jpg')
-	mtx, dist = __calibrate_camera(calibration_images)
-	_save_undistorted_example_camera_calibration_images(calibration_images, mtx, dist)
+	mtx, dist = __calibrate_camera(calibration_images, testMode=True)
+	__save_undistorted_example_camera_calibration_images(calibration_images, mtx, dist)
 	return mtx, dist

@@ -67,7 +67,6 @@ def __find_left_and_right_lane_indices(binary_warped_y_shape, leftx_base, rightx
 
 def find_lanes_with_histogram(binary_warped):
     """ Find lanes wit the help of a histogram. """
-    # Assuming you have created a warped binary image called "binary_warped"
     # Take a histogram of the bottom half of the image
     histogram = np.sum(binary_warped[int(binary_warped.shape[0]/2):,:], axis=0)
     # Create an output image to draw on and  visualize the result
