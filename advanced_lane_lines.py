@@ -93,8 +93,8 @@ def pipeline(img, left_lane=None, right_lane=None ,mtx=None, dist=None, fname=No
 		ax21.imshow(warped, cmap='gray')
 		ax21.set_title('Warped Image', fontsize=50)
 		ax22.imshow(identified_lanes_image)
-		ax22.plot(left_lane.current_fit, left_lane.ploty, color='yellow')
-		ax22.plot(right_lane.current_fit, right_lane.ploty, color='yellow')
+		ax22.plot(left_lane.current_xfitted, left_lane.ploty, color='yellow')
+		ax22.plot(right_lane.current_xfitted, right_lane.ploty, color='yellow')
 		ax22.set_title('Identified Lanes', fontsize=50)
 		ax23.imshow(rewarped)
 		ax23.set_title('Rewarped Image', fontsize=50)
@@ -110,8 +110,8 @@ def test_pipeline(images):
 	""" Pipeline for finding lane lines. It needs a array of the images to proceed.
 		The function calls pipeline() to proceed each image.
 	"""
-	### Calculate calibration once
-	mtx, dist = camera_calibration.get_camera_calibration_values()
+	### Get calibration once
+	global mtx, dist
 	for fname in images:
 		img = mpimg.imread(fname)
 		### Just for safety I work on a copy of the image
@@ -122,23 +122,36 @@ def video_pipeline(image):
 	global mtx, dist, left_lane, right_lane
 	return pipeline(image, left_lane, right_lane, mtx, dist, testMode=False)
 
-"""
-camera_calibration.get_camera_calibration_values_and_save_example_camera_calibration_images()
-"""
 
+mtx, dist = camera_calibration.get_camera_calibration_values()
+camera_calibration.save_example_camera_calibration_images(mtx, dist)
 
 test_images = glob.glob('./test_images/test*.jpg')
 test_pipeline(test_images)
 straight_lines_images = glob.glob('./test_images/straight_lines*.jpg')
 test_pipeline(straight_lines_images)
 
-
-"""
-mtx, dist = camera_calibration.get_camera_calibration_values()
 left_lane = lane.Lane()
 right_lane = lane.Lane()
 output = 'processed_project_video.mp4'
 clip = VideoFileClip('project_video.mp4')
 output_clip = clip.fl_image(video_pipeline)
 output_clip.write_videofile(output, audio=False)
+
+"""challenge_video
+left_lane = lane.Lane()
+right_lane = lane.Lane()
+output_c = 'processed_challenge_video.mp4'
+clip_c = VideoFileClip('challenge_video.mp4')
+output_clip_c = clip_c.fl_image(video_pipeline)
+output_clip_c.write_videofile(output_c, audio=False)
+"""
+
+"""harder_challenge_video
+left_lane = lane.Lane()
+right_lane = lane.Lane()
+output_hc = 'processed_harder_challenge_video.mp4'
+clip_hc = VideoFileClip('harder_challenge_video.mp4')
+output_clip_hc = clip_hc.fl_image(video_pipeline)
+output_clip_hc.write_videofile(output_hc, audio=False)
 """

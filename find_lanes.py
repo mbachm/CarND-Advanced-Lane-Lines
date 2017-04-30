@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 import lane
+from scipy import signal
 
 # Choose the number of sliding windows
 nwindows = 9
@@ -34,14 +35,16 @@ def __window_search(binary_warped, nonzero, forLeftLane=True):
     window_height = np.int(binary_warped_y_shape/nwindows)
     # Take a histogram of the bottom half of the image
     histogram = np.sum(binary_warped[int(binary_warped_y_shape/2):,:], axis=0)
+    # Smoothen the histogram
+    histogram_smooth = signal.medfilt(histogram, 15)
 
     # Find the peak of the left and right halves of the histogram
     # These will be the starting point for the left and right lines
-    midpoint = np.int(histogram.shape[0]/2)
+    midpoint = np.int(histogram_smooth.shape[0]/2)
     if forLeftLane:
-        x_base = np.argmax(histogram[:midpoint])
+        x_base = np.argmax(histogram_smooth[:midpoint])
     else:
-        x_base = np.argmax(histogram[midpoint:]) + midpoint
+        x_base = np.argmax(histogram_smooth[midpoint:]) + midpoint
     x_current = x_base
 
     nonzeroy = np.array(nonzero[0])
@@ -71,20 +74,23 @@ def __find_left_and_right_lane_indices(binary_warped, left_lane, right_lane):
     """
     # Identify the x and y positions of all nonzero pixels in the image
     nonzero = binary_warped.nonzero()
+    left_lane_inds = __window_search(binary_warped, nonzero, forLeftLane=True)#
+    right_lane_inds = __window_search(binary_warped, nonzero, forLeftLane=False)
 
-    ### Skip sliding windows step if lines are already found
-    if left_lane.recent_fit:
-        left_lane_inds = __calculate_lane_indices(left_lane.recent_fit[0], nonzero)
-    else:
-        ###Otherwise, perform a sliding windows search
-        left_lane_inds = __window_search(binary_warped, nonzero, forLeftLane=True)
-
-    ### Skip sliding windows step if lines are already found
-    if right_lane.recent_fit:
-        right_lane_inds = __calculate_lane_indices(right_lane.recent_fit[0], nonzero)
-    else:
-        ###Otherwise, perform a sliding windows search
-        right_lane_inds = __window_search(binary_warped, nonzero, forLeftLane=False) 
+    ### TODO: Optimization
+    #### Skip sliding windows step if lines are already found
+    #if left_lane.recent_fit:
+    #    left_lane_inds = __calculate_lane_indices(left_lane.recent_fit[0], nonzero)
+    #else:
+    #    ###Otherwise, perform a sliding windows search
+    #    left_lane_inds = __window_search(binary_warped, nonzero, forLeftLane=True)
+    #
+    #### Skip sliding windows step if lines are already found
+    #if right_lane.recent_fit:
+    #    right_lane_inds = __calculate_lane_indices(right_lane.recent_fit[0], nonzero)
+    #else:
+    #    ###Otherwise, perform a sliding windows search
+    #    right_lane_inds = __window_search(binary_warped, nonzero, forLeftLane=False) 
 
     return left_lane_inds, right_lane_inds
 
@@ -107,9 +113,9 @@ def find_lanes_with_histogram(binary_warped, left_lane, right_lane):
 
     # Extract left and right line pixel positions
     leftx = nonzerox[left_lane_inds]
-    lefty = nonzeroy[left_lane_inds] 
+    lefty = nonzeroy[left_lane_inds]
     rightx = nonzerox[right_lane_inds]
-    righty = nonzeroy[right_lane_inds] 
+    righty = nonzeroy[right_lane_inds]
 
     # After x and y for left and right lane were found, update them
     left_detection, left_n_buffered = left_lane.update(leftx, lefty)
@@ -127,8 +133,12 @@ def fillPolySpace(image, left_lane, right_lane):
     """ Fill the space between the found lanes.
     """
     # Recast the x and y points into usable format for cv2.fillPoly()
-    pts_left = np.array([np.transpose(np.vstack([left_lane.best_fit, left_lane.ploty]))])
-    pts_right = np.array([np.flipud(np.transpose(np.vstack([right_lane.best_fit, right_lane.ploty])))])
+    #print(left_lane.best_fit)
+    #print(left_lane.ploty)
+    #left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
+    #right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
+    pts_left = np.array([np.transpose(np.vstack([left_lane.bestx, left_lane.ploty]))])
+    pts_right = np.array([np.flipud(np.transpose(np.vstack([right_lane.bestx, right_lane.ploty])))])
     pts = np.hstack((pts_left, pts_right))
 
     # Draw the lane onto the warped blank image

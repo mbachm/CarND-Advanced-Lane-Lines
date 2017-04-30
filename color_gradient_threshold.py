@@ -48,7 +48,7 @@ def __dir_threshold(image, sobel_kernel=3, thresh=(0, np.pi/2)):
     abs_sobely = np.absolute(sobely)
     direction = np.arctan2(abs_sobely, abs_sobelx)
     dir_binary = np.zeros_like(direction)
-    dir_binary[(direction >= thresh[0]) & (direction <= thresh[1])] = 1
+    dir_binary[(direction > thresh[0]) & (direction < thresh[1])] = 1
     return dir_binary
 
 def __hls_threshold(image, thresh=(90, 255)):
@@ -65,8 +65,28 @@ def __hls_threshold(image, thresh=(90, 255)):
     hls = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
     s_channel = hls[:,:,2]
     s_binary = np.zeros_like(s_channel)
-    s_binary[(s_channel >= thresh[0]) & (s_channel <= thresh[1])] = 1
+    s_binary[(s_channel > thresh[0]) & (s_channel < thresh[1])] = 1
     return s_binary
+
+def __apply_white_yellow_threshold(image):
+    # Convert to HLS color space and separate the V channel
+    hls = cv2.cvtColor(image, cv2.COLOR_RGB2HLS).astype(np.float)
+
+    ## White Color
+    lower_white = np.array([0,210,0], dtype=np.uint8)
+    upper_white = np.array([255,255,255], dtype=np.uint8)
+    white_mask = cv2.inRange(hls, lower_white, upper_white)
+
+    ## Yellow Color
+    lower_yellow = np.array([10,0,100], dtype=np.uint8)
+    upper_yellow = np.array([30,220,255], dtype=np.uint8)
+    yellow_mask = cv2.inRange(hls, lower_yellow, upper_yellow)
+
+    ### Combine colors
+    combined_binary = np.zeros_like(white_mask)
+    combined_binary[((white_mask == 255) | (yellow_mask == 255))] = 255
+    combined_binary[(combined_binary == 255)] = 1
+    return combined_binary
 
 def apply_thresholds(image):
     """ Applies sobel for x and y orientation, magnitude and direction thresholds
@@ -74,12 +94,13 @@ def apply_thresholds(image):
         returned. 
     """
     gradx = __abs_sobel_thresh(image, orient='x', thresh=(20, 100))
-    #ksize = 15
     #grady = __abs_sobel_thresh(image, orient='y', thresh=(20, 100))
-    #mag_binary = __mag_thresh(image, sobel_kernel=ksize, mag_thresh=(30, 100))
+    ksize = 31
+    mag_binary = __mag_thresh(image, sobel_kernel=ksize, mag_thresh=(50, 130))
     #dir_binary = __dir_threshold(image, sobel_kernel=ksize, thresh=(0.7, 1.3))
     hls_binary = __hls_threshold(image, thresh=(170, 255))
+    yellow_white = __apply_white_yellow_threshold(image)
 
     combined = np.zeros_like(hls_binary)
-    combined[(hls_binary == 1) | (gradx == 1)] = 1
+    combined[(yellow_white == 1) | ((hls_binary == 1) & (gradx == 1) & (mag_binary == 1))] = 1
     return combined

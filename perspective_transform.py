@@ -2,8 +2,6 @@ import numpy as np
 import cv2
 import matplotlib.image as mpimg
 
-bottom_width_offset = 100
-apex_height = 480
 
 def __standard_vertices_array(image, dtype=np.int32):
 	""" Generates the standard vertices array for the image mask for the given image.
@@ -11,7 +9,9 @@ def __standard_vertices_array(image, dtype=np.int32):
 		size is 1280x780.
 	"""
 	imshape = image.shape
-	apex_width_offset = 500
+	bottom_width_offset = 120
+	apex_width_offset = 550
+	apex_height = 445
 	bottom_left = [bottom_width_offset, imshape[0]]
 	bottom_right = [imshape[1]-bottom_width_offset, imshape[0]]
 	apex_left = [apex_width_offset, apex_height]

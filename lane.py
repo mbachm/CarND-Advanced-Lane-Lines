@@ -43,7 +43,7 @@ class Lane:
         # difference in fit coefficients between last and new fits
         self.diffs = np.array([0,0,0], dtype='float') 
         # x values for detected line pixels
-        self.allx = None  
+        self.allx = None
         # y values for detected line pixels
         self.ally = None
 
@@ -51,15 +51,15 @@ class Lane:
         self.allx = allx
         self.ally = ally
 
-    def set_current_xfitted(self):
-        self.current_xfitted = np.polyfit(self.ally, self.allx, 2)
+    def set_current_fit(self):
+        self.current_fit = np.polyfit(self.ally, self.allx, 2)
 
-    def set_current_rs_xfitted(self):
+    def set_current_rs_xfit(self):
         self.current_rs_xfitted = np.polyfit(self.ally*ym_per_pix, self.allx*xm_per_pix, 2)
 
-    def set_current_fit(self):
+    def set_current_xfitted(self):
         yvals = self.ploty
-        self.current_fit = self.current_xfitted[0]*yvals**2 + self.current_xfitted[1]*yvals + self.current_xfitted[2]
+        self.current_xfitted = self.current_fit[0]*yvals**2 + self.current_fit[1]*yvals + self.current_fit[2]
 
     def set_bestx(self):
         fits = self.recent_xfitted
@@ -117,31 +117,21 @@ class Lane:
             self.diffs = np.array([0,0,0], dtype='float')
 
     def check_detected_lane(self):
-        return True
-        #TODO: LAter
-        """
-        flag = True
-        maxdist = 2.8*700  # distance in meters from the lane
-        print(self.line_base_pos)
-        print(maxdist)
-        if(abs(self.line_base_pos) > maxdist ):
-            print('lane too far away')
-            flag  = False        
+        flag = True      
         if(self.n_buffered > 0):
             relative_delta = self.diffs / self.best_fit
             # allow maximally this percentage of variation in the fit coefficients from frame to frame
             if not (abs(relative_delta)<np.array([0.7,0.5,0.15])).all():
-                print('fit coeffs too far off [%]',relative_delta)
+                #print('fit coeffs too far off [%]',relative_delta)
                 flag=False
                 
         return flag
-        """
 
     def update(self, allx, ally):
         self.set_allxy(allx, ally)
-        self.set_current_xfitted()
-        self.set_current_rs_xfitted()
         self.set_current_fit()
+        self.set_current_xfitted()
+        self.set_current_rs_xfit()
         self.get_diffs()
         if self.check_detected_lane():
             self.detected=True
@@ -158,4 +148,4 @@ class Lane:
                 self.set_best_fit()
 
         self.set_radius_of_curvature()
-        return self.detected,self.n_buffered
+        return self.detected, self.n_buffered
