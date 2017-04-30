@@ -137,21 +137,3 @@ output = 'processed_project_video.mp4'
 clip = VideoFileClip('project_video.mp4')
 output_clip = clip.fl_image(video_pipeline)
 output_clip.write_videofile(output, audio=False)
-
-"""challenge_video
-left_lane = lane.Lane()
-right_lane = lane.Lane()
-output_c = 'processed_challenge_video.mp4'
-clip_c = VideoFileClip('challenge_video.mp4')
-output_clip_c = clip_c.fl_image(video_pipeline)
-output_clip_c.write_videofile(output_c, audio=False)
-"""
-
-"""harder_challenge_video
-left_lane = lane.Lane()
-right_lane = lane.Lane()
-output_hc = 'processed_harder_challenge_video.mp4'
-clip_hc = VideoFileClip('harder_challenge_video.mp4')
-output_clip_hc = clip_hc.fl_image(video_pipeline)
-output_clip_hc.write_videofile(output_hc, audio=False)
-"""

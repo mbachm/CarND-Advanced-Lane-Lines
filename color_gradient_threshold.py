@@ -72,12 +72,12 @@ def __apply_white_yellow_threshold(image):
     # Convert to HLS color space and separate the V channel
     hls = cv2.cvtColor(image, cv2.COLOR_RGB2HLS).astype(np.float)
 
-    ## White Color
+    ### White color thresholds
     lower_white = np.array([0,210,0], dtype=np.uint8)
     upper_white = np.array([255,255,255], dtype=np.uint8)
     white_mask = cv2.inRange(hls, lower_white, upper_white)
 
-    ## Yellow Color
+    ### Yellow color thresholds
     lower_yellow = np.array([10,0,100], dtype=np.uint8)
     upper_yellow = np.array([30,220,255], dtype=np.uint8)
     yellow_mask = cv2.inRange(hls, lower_yellow, upper_yellow)
@@ -89,9 +89,9 @@ def __apply_white_yellow_threshold(image):
     return combined_binary
 
 def apply_thresholds(image):
-    """ Applies sobel for x and y orientation, magnitude and direction thresholds
-        for an given image and combines the results in a binary image, which is 
-        returned. 
+    """ Applies sobel for x orientation, magnitude, S-channel thresholds and a mask
+        for the colors 'yellow' and 'white' on an given image and combines the results
+        in a binary image which is returned. 
     """
     gradx = __abs_sobel_thresh(image, orient='x', thresh=(20, 100))
     #grady = __abs_sobel_thresh(image, orient='y', thresh=(20, 100))

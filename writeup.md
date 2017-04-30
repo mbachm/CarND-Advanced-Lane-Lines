@@ -1,11 +1,11 @@
-#Writeup Report
+# Writeup Report
 ---
 
 **Advanced Lane Finding Project**
 
 [//]: # (Image References)
 
-[dist]: ./camera_cal/calibration8.jgp "Distorted"
+[dist]: ./camera_cal/calibration8.jpg "Distorted"
 [undist]: ./output_images/calibration8.jpg "Undistorted"
 [straight_lines1]: ./output_images/straight_lines1.jpg "Straight lines 1"
 [straight_lines2]: ./output_images/straight_lines2.jpg "Straight lines 2"
@@ -18,40 +18,41 @@
 [video1]: ./processed_project_video.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
-###Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
+### Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
 
 ---
-###Writeup Report
+### Writeup Report
 
 My project consists of multiple python modules: 
 * `advanced_lane_lines.py`: The main class, where all other methods/modules are called from
+* `lane.py`: Module of a lane. It keeps track of recent found lanes and bufferes them for a smoother result
 * `camera_calibration.py`: The module for the camera calibration
 * `color_gradient_threshold.py`: Module to create a binary thresholded image
 * `perspective_transform.py`: Module to transform/warp images and for applying the region of interest image mask
 * `find_lanes.py`: Find lanes wit the help of a histogram and curvature and the distance to the center of the car
 
-In the main module `advanced_lane_lines.py` all important steps are called. The most important function is `pipeline()`(line 24-92). It consinst of 7 steps which generate my result:
-1. Camera Calibration (done if necessary)
+In the main module `advanced_lane_lines.py` all important steps are called. The most important function is `pipeline()`(line 33-106). It consinst of 7 steps which generate my result:
+1. Camera calibration (done if necessary)
 2. Distortion correction
-3. Color & Gradient Threshold
-4. Perspective Transform
+3. Color & gradient thresholding
+4. Perspective transformation
 5. Find lanes, calculate curvature and distance to center  with peaks in histogram. Draw found lanes in transformed image
 6. Retransform image and stack undistorted and rewarped image
-7. Write text with calculations of step 5 on image
+7. Write text with calculations for curvature and vehicle postion on image
 
-The results of the test images where generated with the function `test_pipeline()` (line 95 -105), which calls `pipeline()`. For a better performance, the camera calibration values where calculated before calling `pipeline()`.
+All important values of the found lanes are stored in lane objects (one for the left and one for the right lane). Inside the lane object, all needed calculations are performed (see `lane.py`).
 
-The code of lines 67-90 was only necessary to generate and save a nice image which contains all steps if my pipeline seperately. I will explain it any further.
+The results of the test images where generated with the function `test_pipeline()` (line 95 -105), which calls `pipeline()`. The code of lines 82-104 was only necessary to generate and save a nice image which contains all steps if my pipeline seperately. I will not explain it.
 
-The project video was computed with the function `video_pipeline()` (lines 107-109), which does not calculates the camera calibration before calling `pipeline()`. Instead, it reads the global variables `mtx` and `dist`. The values were calcluated in line 123 before processing the project video (line 123-128).
+The project video was computed with the function `video_pipeline()` (lines 121-123). The values for the camera calibration where generated in line 126 both for `test_pipeline()` and `video_pipeline()`. This way, they only had to be caclulated once.
 
 Now I will go through each necessary rubric point and explain the details of my implementation.
 
-###Camera Calibration
+### Camera Calibration
 
-The code for this step is contained in camera_calibration.py. `get_camera_calibration_values()` (line 54-60) and `get_camera_calibration_values_and_save_example_camera_calibration_images()` (line 44-52) are the public methods for this python module. The second was only used to save the undistort images, the first is used for the pipeline.
+The code for this step is contained in camera_calibration.py. `get_camera_calibration_values()` (line 43-51) and `save_example_camera_calibration_images()` (line 53-58) are the public methods for this python module. The second was only used to save the undistort images, the first is used for the pipeline.
 
-The code of `get_camera_calibration_values()` calls the function `__calibrate_camera()` (line 8-33), which is pretty the same as in the 'Correcting for Distortion' lesson. I start by preparing "object points", which will be the (x, y, z) coordinates of the chessboard corners in the world. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.  The object points have a size of 6*9 as the chessboards have 9 columns and 6 rows (line 16-20). Thus, `objp` is just a replicated array of coordinates, and `objpoints` will be appended with a copy of it every time I successfully detect all chessboard corners in a test image.  `imgpoints` will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection. To find a chessboard on the image, I use the `cv2.findChessboardCorners()` function (line 23-30).
+The code of `get_camera_calibration_values()` calls the function `__calibrate_camera()` (line 8-33), which is nearly the same as in the 'Correcting for Distortion' lesson. I start by preparing 'object points', which will be the (x, y, z) coordinates of the chessboard corners in the world. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.  The object points have a size of 6*9 as the chessboards have 9 columns and 6 rows (line 16-20). Thus, `objp` is just a replicated array of coordinates, and `objpoints` will be appended with a copy of it every time I successfully detect all chessboard corners in a test image. `imgpoints` will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection. To find a chessboard on the image, I use the `cv2.findChessboardCorners()` function (line 23-30).
 
 I then used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function (line 32-33) and obtained this result: 
 
@@ -59,28 +60,28 @@ I then used the output `objpoints` and `imgpoints` to compute the camera calibra
 |:---:|:---:|
 | ![distorted image][dist] | ![undistorted image][undist] |
 
-###Pipeline (single images)
+### Pipeline (single images)
 
 | Pipeline steps for straight line images |
 |:---:|
 | ![straight line image 1][straight_lines1] |
 | ![straight line image 2][straight_lines2] |
 
-####Distortion-correction
+#### Distortion-correction
 
-You can see in the two images above under the headline 'Undistorted Image' that I applied the distortion correction to the straight line images. This was done in step 2 in my pipeline (`advanced_lane_lines.py`, line 47). I used the `cv2.undistort()` function with my previos calculated values to perform the distortion correction
+You can see in the two images above under the headline 'Undistorted Image' that I applied the distortion correction to the straight line images. This was done in step 2 in my pipeline (`advanced_lane_lines.py`, line 61). I used the `cv2.undistort()` function with my previos calculated values to perform the distortion correction
 
-####Color transforms, gradients or other methods to create a thresholded binary image.
+#### Color transforms, gradients or other methods to create a thresholded binary image.
 
-The code for this can be found in the model `color_gradient_threshold.py`. I used a combination of absolute sobelx and S-channel thresholds to generate a binary image (function `apply_thresholds()` lines 71-85). To calculate the absolute x sobel threshold, I used a function of which was presented in a Udacity lession (`__abs_sobel_thresh()`, line 8-23). The HLS color transformation and threshold is performed in the function `__hls_threshold()` (lines 54-69). Both function generate a binary image, which is combines in the `apply_thresholds()` function (line 83-84).
+The code for this can be found in the model `color_gradient_threshold.py`. I used a combination of absolute sobelx, S-channel, magnitude thresholds togehter with a mask for the colors 'yellow' and 'white' to generate a binary image (function `apply_thresholds()` lines 91-106). To calculate the absolute x sobel threshold, I used a function of which was presented in a Udacity lession (`__abs_sobel_thresh()`, line 8-23). The HLS color transformation and threshold is performed in the function `__hls_threshold()` (lines 54-69), while the magnitude threshold is calculated in `__mag_thresh()` (lines 25-37). The yellow and white color masks are implemented in the function `__apply_white_yellow_threshold()` (lines 71-89). All functions generate a binary image which is combines in the `apply_thresholds()` function (line 104-105).
 
-I also experimented with direction, magnitude and sobely thresholds, as you can see in this module (lines 25-69 and 77-80). But the above combination provided the best results for me. You can the result of the `apply_thresholds()` function in the images above with the title 'Combination'.
+I also experimented with directionand sobely thresholds, as you can see in this module (lines 39.52). But the above combination provided the best results for me. You can the result of the `apply_thresholds()` function in the images above with the title 'Combination'.
 
-This parted is called in `advanced_lane_lines.py` in step 3, line 50.
+This parted is called in `advanced_lane_lines.py` in step 3, line 64.
 
-####Perspective transform
+#### Perspective transform
 
-My implementation for the perspective transformation can be found in the module `perspective_transform.py`. The function `apply_standard_mask_to_image()` applies a mask to the image (see 'Masked Image' in the images above), which is called in line 53 in `advanced_lane_lines.py`. Afterwards, the function `warp()` is called, which takes an image and an optional boolean parameter `toBirdView`. There I define source and destination points for the transformation (lines 57 - 66 in `perspective_transform.py`). I chose the hardcode the source and destination points in the following manner:
+My implementation for the perspective transformation can be found in the module `perspective_transform.py`. The function `apply_standard_mask_to_image()` applies a mask to the image (see 'Masked Image' in the images above), which is called in line 67 in `advanced_lane_lines.py`. Afterwards, the function `warp()` is called, which takes an image and an optional boolean parameter `toBirdView`. There I define source and destination points for the transformation (lines 56 - 64 in `perspective_transform.py`). I chose the hardcode the source and destination points in the following manner:
 
 ```
 def __standard_vertices_array(image, dtype=np.int32):
@@ -89,7 +90,9 @@ def __standard_vertices_array(image, dtype=np.int32):
 		size is 1280x780.
 	"""
 	imshape = image.shape
-	apex_width_offset = 500
+	bottom_width_offset = 120
+	apex_width_offset = 550
+	apex_height = 445
 	bottom_left = [bottom_width_offset, imshape[0]]
 	bottom_right = [imshape[1]-bottom_width_offset, imshape[0]]
 	apex_left = [apex_width_offset, apex_height]
@@ -112,45 +115,45 @@ This resulted in the following source and destination points:
 
 | Source    | Destination | 
 |:---------:|:-----------:| 
-| 100, 720  | 100, 720    | 
-| 1180, 720 | 1180, 720   |
-| 780, 480  | 1180, 0     |
-| 500, 480  | 100, 0      |
+| 120, 720  | 100, 720    | 
+| 1160, 720 | 1180, 720   |
+| 730, 445  | 1180, 0     |
+| 550, 445  | 100, 0      |
 
-Afterwars I use `cv2.getPerspectiveTransform()` to compute perspective transform matrix M and use M with `cv2.warpPerspective()` to create the warped/transformed image (lines 68-76 in `perspective_transform.py`). Depending of the boolean parameter toBirdView of the function `warp()` I decide if the transformation has to be done to bird view or back to normal (lines 69-73).
+Afterwars I use `cv2.getPerspectiveTransform()` to compute perspective transform matrix M and use M with `cv2.warpPerspective()` to create the warped/transformed image (lines 66-74 in `perspective_transform.py`). Depending of the boolean parameter toBirdView of the function `warp()` I decide if the transformation has to be done to bird view or back to normal (lines 67-71).
 
-This parted is used in `advanced_lane_lines.py` in step 4 with toBirdView=True and 6 with toBirdView=False, line 53-54 and 61-62.
+This parted is used in `advanced_lane_lines.py` in step 4 with toBirdView=True and 6 with toBirdView=False, line 67-68 and 75-76.
 
-####Identifiy lane-line pixels and fit their positions with a polynomial
+#### Identifiy lane-line pixels and fit their positions with a polynomial
 
-My implementation of this part can be found in the module `find_lanes.py`. The function `find_lanes_with_histogram()` (lines 68-117) does this. First, I take a histogram of the bottom half of the image (line 71). Then I find the peak of the left and right halves of the histogram, which should be the left and right lanes (line 77-79). Afterwars I identify the x and y positions of all nonzero pixels in the image (line 82-84) and find the left and right lane indices with the function `__find_left_and_right_lane_indices()` (line 87, function 36-66). As the code of the function is take from a Udacity lession, I will not explain it further.
+My implementation of this part can be found in the module `find_lanes.py`. The function `find_lanes_with_histogram()` (lines 72-105) implements the main part. First I create an output image and identfiy the nonzero values for x and y (lines 77-82). Afterwars I apply a window search with the function `__find_left_and_right_lane_indices()` which calls `__window_search()` for left and right lanes. `__window_search()` performs a sliding window search (lines 21-61) and returns the indices of the pixels of a lane line. Therefor I take a histogram of the bottom half of the image and smooths it with signal.medfilt of scipy (line 31-33). Then I find the peaks of the histogram, which should be lanes (line 37-42). Afterwars I identify the x and y positions of all nonzero pixels in the image (line 4-46) and perform a sliding window search (line 49-61). As the code of the function is take from a Udacity lession, I will not explain it further.
 
-Afterwards I concatenate the arrays, extract left and right line pixel positions and fit a second order polynomial to each (line 90-101).
+Afterwards I concatenate the arrays for each lane (lines 88-89), extract left and right line pixel positions (lines 91-95) and update the lane objects (line 98 and 99), which will fit a second order polynomial and perform all further calculations in the `update()` function in lanes.py (line 141-160), which will also verifiy that the found lane is ok.
 
-The result of this step can be seen in the images above under the headline 'Identified Lanes', where I also filled the space between the two polynomials green (`advanced_lane_lines.py` step 5, lines 61 and 62).
+The result of this step can be seen in the images above under the headline 'Identified Lanes', where I also filled the space between the two polynomials green (`advanced_lane_lines.py` step 5, lines 71 and 72).
 
-####Calculation of the radius of curvature of the lane and the position of the vehicle with respect to center.
+#### Calculation of the radius of curvature of the lane and the position of the vehicle with respect to center.
 
-This was also done in the function `find_lanes_with_histogram()` of the module `find_lanes.py` (line 113-115). To calculate the curvature, I call the function `__calculate_real_space_curvature()` of the same module. There I take the maximun y value and use the methods explained in the 'Measuring Curvature' lesson.
-
-The calculation of the postion of the vehicle is done in the method `__calculate_center_of_image()` (line 32-37) and is simple.
+The position of the vehicle is done in the function `__calculate_center_of_image()` in `find_lanes.py`. 
 
 ```
 def __calculate_center_of_image(left_fitx, right_fitx, width):
     """ Calculates the distance to the center of the image. """
     middle = (left_fitx[-1] + right_fitx[-1])//2
     veh_pos = width//2
-    center_distance = (veh_pos - middle)*xm_per_pix
+    center_distance = (veh_pos - middle)*lane.xm_per_pix
     return center_distance
 ```
 
-First I calculate the center/middle of the two polynomials (left_fitx, right_fitx). Then I calculate the postion of the vehicle, which is the center of the image. Afterwards, I substract the middle of the vehicle postion and multiplies it with meters per pixel in x dimension `xm_per_pix = 3.7/700`.
+To identify the middle of the two lanes it adds the last entry of the averaged polynomial coefficients over the last n iterations of each lane and divides it by 2. Afterwards we can identify the position of the vehicle by the width of the image divided by 2. The distance of the vehicle to the center is veh_pos - middle. I multiply it with a value of 3.7/700, which is the coefficient to transform pixel values to meters in this image (provided by Udacity).
 
-####Results plotted back down onto the road with clearly identified lane area
+The radius of curvature is calculated by each lane itself in `radius_of_curvature()` (lanes.py, lines 116-121).
 
-This is done in step 7 of my pipeline (line 65, `advanced_lane_lines.py`). The code calls `__put_texts_on_image()` with the before calculated radius of curvature and the position of the vehicle (lines 13-22). The result of this step can be seen under the headline 'Final Image' in the provide images.
+#### Results plotted back down onto the road with clearly identified lane area
 
-###Result of the single test images
+This is done in step 7 of my pipeline (line 79, `advanced_lane_lines.py`). The code calls `__put_texts_on_image()` with the before calculated radius of curvature and the position of the vehicle (lines 13-22). The result of this step can be seen under the headline 'Final Image' in the provide images.
+
+### Result of the single test images
 
 Here are the other processed test images.
 
@@ -165,17 +168,25 @@ Here are the other processed test images.
 
 ---
 
-###Pipeline (video)
+### Pipeline (video)
 
-####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
+#### Final video output
 
 Here's a [link to my video result](./processed_project_video.mp4)
 
 ---
 
-###Discussion
+### Discussion
 
-####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
+#### Problems and issues I faced in my implementation of this project. Where will your pipeline likely fail?  What could you do to make it more robust?
 
 Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
 
+First I don't perform a skip of sliding the windows when I previously found a lane. This would speed up my pipeline and could lead to a more robust detection for the beginning and ending of a lane.
+
+Second could optimize the thresholds for the binary image. I don't use the direction of the gradient or the absolute sobel for y orientation. With a better combination of the thresholds i would be able to dected lanes even better. Furthermore the yellow and white color thresholds are optimized for this project. If the color of the street or even the lane changes, this could be a problem for my pipeline.
+
+Another aspect could be the rejection of outliners. This could lead to a better calculation of the polynomial for each lane.
+
+Besides the mask of my binary image is optimized for 'nearly' straight streets without hard bends. I think my pipeline will likely fail on a very curvy road.
+curvy road will
