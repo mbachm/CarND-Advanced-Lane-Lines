@@ -11,11 +11,9 @@ margin = 100
 # Set minimum number of pixels found to recenter window
 minpix = 50
 
-def __calculate_center_of_image(left_fitx, right_fitx, width):
+def __calculate_center_of_image(left_line_post, right_line_post, width):
     """ Calculates the distance to the center of the image. """
-    middle = (left_fitx[-1] + right_fitx[-1])//2
-    veh_pos = width//2
-    center_distance = (veh_pos - middle)*lane.xm_per_pix
+    center_distance = (left_line_post+right_line_post)/2
     return center_distance
 
 def __window_search(binary_warped, nonzero, forLeftLane=True):
@@ -102,8 +100,7 @@ def find_lanes_with_histogram(binary_warped, left_lane, right_lane):
     out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
 
     ### Calculate distance from center
-    center_distance = __calculate_center_of_image(left_lane.best_fit, right_lane.best_fit, binary_warped.shape[1])
-
+    center_distance = __calculate_center_of_image(left_lane.line_base_pos, right_lane.line_base_pos, binary_warped.shape[1])
     return left_lane, right_lane, center_distance, out_img
 
 def fillPolySpace(image, left_lane, right_lane):

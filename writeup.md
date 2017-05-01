@@ -115,8 +115,8 @@ This resulted in the following source and destination points:
 
 | Source    | Destination | 
 |:---------:|:-----------:| 
-| 120, 720  | 100, 720    | 
-| 1160, 720 | 1180, 720   |
+| 120, 720  | 400, 720    | 
+| 1160, 720 | 880, 720    |
 | 730, 445  | 1180, 0     |
 | 550, 445  | 100, 0      |
 
@@ -128,7 +128,7 @@ This parted is used in `advanced_lane_lines.py` in step 4 with toBirdView=True a
 
 My implementation of this part can be found in the module `find_lanes.py`. The function `find_lanes_with_histogram()` (lines 72-105) implements the main part. First I create an output image and identfiy the nonzero values for x and y (lines 77-82). Afterwars I apply a window search with the function `__find_left_and_right_lane_indices()` which calls `__window_search()` for left and right lanes. `__window_search()` performs a sliding window search (lines 21-61) and returns the indices of the pixels of a lane line. Therefor I take a histogram of the bottom half of the image and smooths it with signal.medfilt of scipy (line 31-33). Then I find the peaks of the histogram, which should be lanes (line 37-42). Afterwars I identify the x and y positions of all nonzero pixels in the image (line 4-46) and perform a sliding window search (line 49-61). As the code of the function is take from a Udacity lession, I will not explain it further.
 
-Afterwards I concatenate the arrays for each lane (lines 88-89), extract left and right line pixel positions (lines 91-95) and update the lane objects (line 98 and 99), which will fit a second order polynomial and perform all further calculations in the `update()` function in lanes.py (line 141-160), which will also verifiy that the found lane is ok.
+Afterwards I concatenate the arrays for each lane (lines 88-89), extract left and right line pixel positions (lines 91-95) and update the lane objects (line 98 and 99), which will fit a second order polynomial and perform all further calculations in the `update()` function in lanes.py (line 147-170), which will also verifiy that the found lane is ok.
 
 The result of this step can be seen in the images above under the headline 'Identified Lanes', where I also filled the space between the two polynomials green (`advanced_lane_lines.py` step 5, lines 71 and 72).
 
@@ -137,17 +137,15 @@ The result of this step can be seen in the images above under the headline 'Iden
 The position of the vehicle is done in the function `__calculate_center_of_image()` in `find_lanes.py`. 
 
 ```
-def __calculate_center_of_image(left_fitx, right_fitx, width):
+def __calculate_center_of_image(left_line_post, right_line_post, width):
     """ Calculates the distance to the center of the image. """
-    middle = (left_fitx[-1] + right_fitx[-1])//2
-    veh_pos = width//2
-    center_distance = (veh_pos - middle)*lane.xm_per_pix
+    center_distance = (left_line_post+right_line_post)/2
     return center_distance
 ```
 
-To identify the middle of the two lanes it adds the last entry of the averaged polynomial coefficients over the last n iterations of each lane and divides it by 2. Afterwards we can identify the position of the vehicle by the width of the image divided by 2. The distance of the vehicle to the center is veh_pos - middle. I multiply it with a value of 3.7/700, which is the coefficient to transform pixel values to meters in this image (provided by Udacity).
+The identify the middle of the two lanes it adds the positions of each lane and divide that by 2. The lane postions are calculated in `lane.py` (lines 132-134). It takes the x values of the most recent fit and substracts 640, which is the half of the image.
 
-The radius of curvature is calculated by each lane itself in `radius_of_curvature()` (lanes.py, lines 116-121).
+The radius of curvature is calculated by each lane itself in `radius_of_curvature()` (lanes.py, lines 118-123).
 
 #### Results plotted back down onto the road with clearly identified lane area
 
