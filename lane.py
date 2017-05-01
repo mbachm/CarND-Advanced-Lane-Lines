@@ -3,7 +3,7 @@ from collections import deque
 
 # Define conversions in x and y from pixels space to meters
 ym_per_pix = 30/720 # meters per pixel in y dimension
-xm_per_pix = 3.7/700 # meters per pixel in x dimension
+xm_per_pix = 3.7/1000.0 # meters per pixel in x dimension
 
 ### Class to receive the characteristics of each line detection
 class Lane:
@@ -45,6 +45,8 @@ class Lane:
         self.allx = None
         # y values for detected line pixels
         self.ally = None
+        self.line_pos = None
+        self.line_base_pos = None
 
     def set_allxy(self, allx, ally):
         """ Sets allx and ally for further calculations. """
@@ -127,6 +129,12 @@ class Lane:
         else:
             self.diffs = np.array([0,0,0], dtype='float')
 
+    def set_line_pos(self):
+        yvals = max(self.ploty)
+        self.line_pos = self.current_fit[0]*yvals**2 + self.current_fit[1]*yvals + self.current_fit[2]
+        basepos = 640
+        self.line_base_pos = (self.line_pos - basepos)*xm_per_pix
+
     def check_detected_lane(self):
         """ Sanity check for the latest detected lane. """
         flag = True      
@@ -135,7 +143,7 @@ class Lane:
             # allow maximally this percentage of variation in the fit coefficients from frame to frame
             if not (abs(relative_delta)<np.array([0.7,0.5,0.15])).all():
                 flag=False
-                
+
         return flag
 
     def update(self, allx, ally):
@@ -145,6 +153,7 @@ class Lane:
         self.set_current_xfitted()
         self.set_current_rs_xfit()
         self.get_diffs()
+        self.set_line_pos()
         if self.check_detected_lane():
             self.detected=True
             self.add_data()

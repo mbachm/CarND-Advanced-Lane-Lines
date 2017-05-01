@@ -56,8 +56,8 @@ def warp(image, toBirdView=True):
 	src = __standard_vertices_array(image, np.float32)
 
 	offset = 100
-	bottom_left = [np.float32(offset), np.float32(image.shape[0])]
-	bottom_right = [np.float32(image.shape[1]-offset), np.float32(image.shape[0])]
+	bottom_left = [np.float32(4*offset), np.float32(image.shape[0])]
+	bottom_right = [np.float32(image.shape[1]-(4*offset)), np.float32(image.shape[0])]
 	apex_left = [np.float32(offset), np.float32(0)]
 	apex_right = [np.float32(image.shape[1]-offset), np.float32(0)]
 
