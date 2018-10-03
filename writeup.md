@@ -38,13 +38,13 @@ In the main module `advanced_lane_lines.py` all important steps are called. The 
 4. Perspective transformation
 5. Find lanes, calculate curvature and distance to center  with peaks in histogram. Draw found lanes in transformed image
 6. Retransform image and stack undistorted and rewarped image
-7. Write text with calculations for curvature and vehicle postion on image
+7. Write text with calculations for curvature and vehicle position on image
 
 All important values of the found lanes are stored in lane objects (one for the left and one for the right lane). Inside the lane object, all needed calculations are performed (see `lane.py`).
 
-The results of the test images where generated with the function `test_pipeline()` (line 95 -105), which calls `pipeline()`. The code of lines 82-104 was only necessary to generate and save a nice image which contains all steps if my pipeline seperately. I will not explain it.
+The results of the test images where generated with the function `test_pipeline()` (line 95 -105), which calls `pipeline()`. The code of lines 82-104 was only necessary to generate and save a nice image which contains all steps if my pipeline separately. I will not explain it.
 
-The project video was computed with the function `video_pipeline()` (lines 121-123). The values for the camera calibration where generated in line 126 both for `test_pipeline()` and `video_pipeline()`. This way, they only had to be caclulated once.
+The project video was computed with the function `video_pipeline()` (lines 121-123). The values for the camera calibration where generated in line 126 both for `test_pipeline()` and `video_pipeline()`. This way, they only had to be calculated once.
 
 Now I will go through each necessary rubric point and explain the details of my implementation.
 
@@ -69,11 +69,11 @@ I then used the output `objpoints` and `imgpoints` to compute the camera calibra
 
 #### Distortion-correction
 
-You can see in the two images above under the headline 'Undistorted Image' that I applied the distortion correction to the straight line images. This was done in step 2 in my pipeline (`advanced_lane_lines.py`, line 61). I used the `cv2.undistort()` function with my previos calculated values to perform the distortion correction
+You can see in the two images above under the headline 'Undistorted Image' that I applied the distortion correction to the straight line images. This was done in step 2 in my pipeline (`advanced_lane_lines.py`, line 61). I used the `cv2.undistort()` function with my previous calculated values to perform the distortion correction
 
 #### Color transforms, gradients or other methods to create a thresholded binary image.
 
-The code for this can be found in the model `color_gradient_threshold.py`. I used a combination of absolute sobelx, S-channel, magnitude thresholds togehter with a mask for the colors 'yellow' and 'white' to generate a binary image (function `apply_thresholds()` lines 91-106). To calculate the absolute x sobel threshold, I used a function of which was presented in a Udacity lession (`__abs_sobel_thresh()`, line 8-23). The HLS color transformation and threshold is performed in the function `__hls_threshold()` (lines 54-69), while the magnitude threshold is calculated in `__mag_thresh()` (lines 25-37). The yellow and white color masks are implemented in the function `__apply_white_yellow_threshold()` (lines 71-89). All functions generate a binary image which is combines in the `apply_thresholds()` function (line 104-105).
+The code for this can be found in the model `color_gradient_threshold.py`. I used a combination of absolute sobelx, S-channel, magnitude thresholds together with a mask for the colors 'yellow' and 'white' to generate a binary image (function `apply_thresholds()` lines 91-106). To calculate the absolute x sobel threshold, I used a function of which was presented in a Udacity lession (`__abs_sobel_thresh()`, line 8-23). The HLS color transformation and threshold is performed in the function `__hls_threshold()` (lines 54-69), while the magnitude threshold is calculated in `__mag_thresh()` (lines 25-37). The yellow and white color masks are implemented in the function `__apply_white_yellow_threshold()` (lines 71-89). All functions generate a binary image which is combines in the `apply_thresholds()` function (line 104-105).
 
 I also experimented with directionand sobely thresholds, as you can see in this module (lines 39.52). But the above combination provided the best results for me. You can the result of the `apply_thresholds()` function in the images above with the title 'Combination'.
 
@@ -124,7 +124,7 @@ Afterwars I use `cv2.getPerspectiveTransform()` to compute perspective transform
 
 This parted is used in `advanced_lane_lines.py` in step 4 with toBirdView=True and 6 with toBirdView=False, line 67-68 and 75-76.
 
-#### Identifiy lane-line pixels and fit their positions with a polynomial
+#### Identify lane-line pixels and fit their positions with a polynomial
 
 My implementation of this part can be found in the module `find_lanes.py`. The function `find_lanes_with_histogram()` (lines 72-105) implements the main part. First I create an output image and identfiy the nonzero values for x and y (lines 77-82). Afterwars I apply a window search with the function `__find_left_and_right_lane_indices()` which calls `__window_search()` for left and right lanes. `__window_search()` performs a sliding window search (lines 21-61) and returns the indices of the pixels of a lane line. Therefor I take a histogram of the bottom half of the image and smooths it with signal.medfilt of scipy (line 31-33). Then I find the peaks of the histogram, which should be lanes (line 37-42). Afterwars I identify the x and y positions of all nonzero pixels in the image (line 4-46) and perform a sliding window search (line 49-61). As the code of the function is take from a Udacity lession, I will not explain it further.
 
@@ -143,7 +143,7 @@ def __calculate_center_of_image(left_line_post, right_line_post, width):
     return center_distance
 ```
 
-The identify the middle of the two lanes it adds the positions of each lane and divide that by 2. The lane postions are calculated in `lane.py` (lines 132-134). It takes the x values of the most recent fit and substracts 640, which is the half of the image.
+The identify the middle of the two lanes it adds the positions of each lane and divide that by 2. The lane postions are calculated in `lane.py` (lines 132-134). It takes the x values of the most recent fit and subtracts 640, which is the half of the image.
 
 The radius of curvature is calculated by each lane itself in `radius_of_curvature()` (lanes.py, lines 118-123).
 
